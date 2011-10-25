@@ -1,13 +1,14 @@
-# ponj
+# brickhit
 
-FIXME: write description
+A breakout clone written in Clojure + LWJGL
 
 ## Usage
 
-FIXME: write
+lein deps
+lein run
 
 ## License
 
-Copyright (C) 2011 FIXME
+Copyright (C) 2011 Justin Hamilton
 
 Distributed under the Eclipse Public License, the same as Clojure.
