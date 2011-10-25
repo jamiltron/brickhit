@@ -6,22 +6,23 @@
             [brickhit.ball :as ball]
             [brickhit.util :as putil]))
 
-
+(def ticks-per-second (Sys/getTimerResolution))
 (defn get-time []
-  (/ (* (Sys/getTime) 1000) (Sys/getTimerResolution)))
+  (/ (* (Sys/getTime) 1000) ticks-per-second))
 (def WIDTH 800)
 (def HEIGHT 600)
 (def player (ref {:x (/ 672 2) :y 536}))
-(def ball (ref {:x (/ 784 2) :y 520 :xdir -1 :ydir -1 :xspeed 0.35 :yspeed 0.35 :collided false}))
-(def l-wall {:x 0 :y 0 :w 1 :h HEIGHT})
-(def r-wall {:x WIDTH :y 0 :w 1 :h HEIGHT})
-(def t-wall {:x 0 :y 0 :w WIDTH :h 1})
+(def ball (ref {:x (/ 784 2) :y 518 :xdir -1 :ydir -1 :xspeed 0.35 :yspeed 0.35 :collided false}))
+(def l-wall {:x -32 :y 0 :w 32 :h HEIGHT})
+(def r-wall {:x WIDTH :y 0 :w 32 :h HEIGHT})
+(def t-wall {:x 0 :y -64 :w WIDTH :h 64})
 (def timer (atom (get-time)))
 
 (defn init-gl [width height]
   (do
     (Display/setDisplayMode (new DisplayMode width height))
     (Display/setTitle "Brickhit: Clojure + LWJGL")
+    (Display/setFullscreen false)
     (Display/create)
     (Display/setVSyncEnabled true)
 

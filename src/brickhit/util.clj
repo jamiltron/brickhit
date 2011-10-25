@@ -59,7 +59,7 @@
         y-area (calc-area e1-y1 e1-y2 e2-y1 e2-y2)]
     (if (< y-area x-area) (if (< e1-x1 e2-x1) :left
                               :right)
-        (if (< e1-y1 e2-y2) :top
+        (if (< e1-y1 e2-y1) :top
             :bottom))))
                
                

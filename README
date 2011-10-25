@@ -2,6 +2,9 @@
 
 A breakout clone written in Clojure + LWJGL
 
+If anyone can help with the blurry images, I'd really appreciate it. I am not sure if my drawing routines
+are correct.
+
 ## Usage
 
 lein deps
