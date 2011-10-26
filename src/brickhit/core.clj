@@ -12,7 +12,7 @@
 (def WIDTH 800)
 (def HEIGHT 600)
 (def player (ref {:x (/ 672 2) :y 536}))
-(def ball (ref {:x (/ 784 2) :y 518 :xdir -1 :ydir -1 :xspeed 0.35 :yspeed 0.35 :collided false}))
+(def ball (ref {:x (/ 784 2) :y 518 :xdir -1 :ydir -1 :xspeed 0.10 :yspeed 0.10 :collided false}))
 (def l-wall {:x -32 :y 0 :w 32 :h HEIGHT})
 (def r-wall {:x WIDTH :y 0 :w 32 :h HEIGHT})
 (def t-wall {:x 0 :y -64 :w WIDTH :h 64})
@@ -43,12 +43,15 @@
    (ref-set r f)))
 
 (defn render []
-  (putil/draw @player)
-  (putil/draw @ball))
+  (do
+    (putil/draw @ball)
+    (putil/draw @player)))
+
 
 (defn clean-up []
-  (Display/destroy)
-  (System/exit 0))
+  (do
+    (Display/destroy)
+    (System/exit 0)))
 
 (defn handle-input [dt]
   (when (Keyboard/isKeyDown Keyboard/KEY_LEFT)
@@ -66,17 +69,19 @@
 
 (defn update-game []
   (let [dt (update-timer!)]
-    (handle-input dt)
-    (update-ref ball (ball/update @ball dt @player l-wall r-wall t-wall))))
+    (do
+      (handle-input dt)
+      (update-ref ball (ball/update @ball dt @player l-wall r-wall t-wall)))))
 
 (defn init-textures []
-  (update-ref player (putil/load-image @player "res/paddle.png"))
-  (update-ref ball (putil/load-image @ball "res/ball.png")))
+  (do
+    (update-ref player (putil/load-image @player "res/paddle.png"))
+    (update-ref ball (putil/load-image @ball "res/ball.png"))))
 
 (defn main-loop []
   (if (. Display isCloseRequested) (clean-up)
       (do
-        (GL11/glClear (or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT))
+        (GL11/glClear GL11/GL_COLOR_BUFFER_BIT)
         (update-game)
         (render)
         (. Display update)
