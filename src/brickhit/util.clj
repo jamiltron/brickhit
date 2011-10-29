@@ -9,8 +9,8 @@
 (defn load-image [this image]
   (let [l (TextureLoader/getTexture "PNG" (ResourceLoader/getResourceAsStream image))]
     (assoc this :texture l
-                :w (.getTextureWidth l)
-                :h (.getTextureHeight l))))
+                :w (.getImageWidth l)
+                :h (.getImageHeight l))))
 
 (defn draw [this]
   (do
@@ -20,13 +20,13 @@
     (GL11/glTranslatef (:x this) (:y this) 0)
     (GL11/glBegin GL11/GL_QUADS)
     (GL11/glTexCoord2f 0 0)
-    (GL11/glVertex2f 0 0)
-    (GL11/glTexCoord2f (:w this) 0)
-    (GL11/glVertex2f  (:w this) 0)
-    (GL11/glTexCoord2f (:w this) (:h this))
-    (GL11/glVertex2f (:w this) (:h this))
-    (GL11/glTexCoord2f 0 (:h this))
-    (GL11/glVertex2f 0 (:h this))
+    (GL11/glVertex2i 0 0)
+    (GL11/glTexCoord2f 1 0)
+    (GL11/glVertex2i  (:w this) 0)
+    (GL11/glTexCoord2f 1 1)
+    (GL11/glVertex2i (:w this) (:h this))
+    (GL11/glTexCoord2f 0 1)
+    (GL11/glVertex2i 0 (:h this))
     (GL11/glEnd)
     (GL11/glPopMatrix)))
 
