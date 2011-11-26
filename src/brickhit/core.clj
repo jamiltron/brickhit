@@ -1,22 +1,52 @@
 (ns brickhit.core
   (:import (org.lwjgl.opengl Display DisplayMode GL11)
            (org.lwjgl.input Keyboard)
-           (org.lwjgl Sys))
-  (:require [brickhit.paddle :as paddle]
-            [brickhit.ball :as ball]
-            [brickhit.util :as putil]))
+           (org.lwjgl Sys)
+           (org.newdawn.slick Color TrueTypeFont)
+           (java.awt Font)
+           (java.io InputStream))
+  (:require   [brickhit.sprite :as sprite]
+              [brickhit.timer :as timer]
+              [brickhit.paddle :as paddle]
+              [brickhit.ball :as ball]
+              [brickhit.brick :as brick]))
 
-(def ticks-per-second (Sys/getTimerResolution))
-(defn get-time []
-  (/ (* (Sys/getTime) 1000) ticks-per-second))
+;; game constants
+(def FPS 60)
 (def WIDTH 800)
 (def HEIGHT 600)
-(def player (ref {:x (/ 672 2) :y 536}))
-(def ball (ref {:x (/ 784 2) :y 518 :xdir -1 :ydir -1 :xspeed 0.35 :yspeed 0.35 :collided false}))
-(def l-wall {:x -32 :y 0 :w 32 :h HEIGHT})
-(def r-wall {:x WIDTH :y 0 :w 32 :h HEIGHT})
-(def t-wall {:x 0 :y -64 :w WIDTH :h 64})
-(def timer (atom (get-time)))
+
+;; game entities
+(def playing? (atom false))
+
+(def awtFont (new Font "Courier New" (Font/BOLD) 24))
+(def awtFontSmaller (new Font "Courier New" (Font/BOLD) 14))
+
+(def player (ref {:x 336
+                  :y 536
+                  :xdir 0
+                  :xspeed 0.35
+                  :yspeed 0
+                  :type :paddle}))
+
+(def ball (ref {:x 384
+                :y 520
+                :xdir 1
+                :ydir 1
+                :xspeed 0.35
+                :yspeed 0.35
+                :type ball}))
+
+(def a-brick (ref {}))
+
+(def bricks (ref []))
+
+;; walls
+(def l-wall (ref {:x -32 :y 0 :w 32 :h HEIGHT :type :wall}))
+(def r-wall (ref {:x WIDTH :y 0 :w 32 :h HEIGHT :type :wall}))
+(def t-wall (ref {:x 0 :y -64 :w WIDTH :h 64 :type :wall}))
+(def b-wall (ref {:x 0 :y 600 :w WIDTH :h 64 :type :wall}))
+
 
 (defn init-gl [width height]
   (do
@@ -38,61 +68,90 @@
     (GL11/glLoadIdentity)
     (GL11/glOrtho 0 width height 0 1 -1)
     (GL11/glMatrixMode GL11/GL_MODELVIEW)
-    (GL11/glViewport 0 0 width height)))
+    (GL11/glViewport 0 0 width height)
+    (def font (new TrueTypeFont awtFont true))
+    (def font2 (new TrueTypeFont awtFontSmaller true))))
 
-(defn update-ref [r f]
+(defn init-textures []
   (dosync
-   (ref-set r f)))
+   (ref-set player (sprite/load-image @player "res/paddle.png"))
+   (ref-set ball (sprite/load-image @ball "res/ball.png"))
+   (ref-set a-brick (sprite/load-image @a-brick "res/brick.png"))))
+
+(defn init-level []
+  (dosync
+   (ref-set bricks
+            (into [] (for [x (range 16 736 (:w @a-brick))
+                           y (range 32 200 (:h @a-brick))]
+                       (ref {:x x, :y y, :texture (:texture @a-brick),
+                             :w (:w @a-brick), :h (:h @a-brick),
+                             :type :brick, :living true, :hit brick/hit!}))))))
 
 (defn render []
   (do
-    (putil/draw @ball)
-    (putil/draw @player)))
-
+    (sprite/draw @player)
+    (sprite/draw @ball)
+    (doseq [brick @bricks]
+      (when (:living @brick) (sprite/draw @brick)))
+    (.drawString font2 0 0 "P to pause, ESC to quit" (Color/white))))
 
 (defn clean-up []
   (do
     (Display/destroy)
     (System/exit 0)))
 
-(defn handle-input [dt]
-  (when (Keyboard/isKeyDown Keyboard/KEY_LEFT)
-    (update-ref player (paddle/move @player -0.35 (- WIDTH 128) dt)))
-  (when (Keyboard/isKeyDown Keyboard/KEY_RIGHT)
-    (update-ref player (paddle/move @player 0.35 (- WIDTH 128) dt)))
-  (when (Keyboard/isKeyDown Keyboard/KEY_ESCAPE)
-    (clean-up)))
+(declare paused-state)
 
-(defn update-timer! []
-  (let [t (get-time)
-        dt (- t @timer)]
-    (do (reset! timer t)
-        dt)))
+(defn handle-input []
+  (when (Keyboard/isKeyDown Keyboard/KEY_LEFT) (paddle/move! player :left))
+  (when (Keyboard/isKeyDown Keyboard/KEY_RIGHT) (paddle/move! player :right))
+  (when (not (or (Keyboard/isKeyDown Keyboard/KEY_LEFT)
+                 (Keyboard/isKeyDown Keyboard/KEY_RIGHT) (paddle/move! player :none))))
+  (when (Keyboard/isKeyDown Keyboard/KEY_P) (reset! playing? false))
+  (when (Keyboard/isKeyDown Keyboard/KEY_ESCAPE) (clean-up)))
 
+(defn handle-unpause []
+  (when (Keyboard/isKeyDown Keyboard/KEY_SPACE) (do
+                                               (reset! playing? true)
+                                               (timer/reset-timer!)))
+  (when (Keyboard/isKeyDown Keyboard/KEY_ESCAPE) (clean-up)))
+
+(defn update-bricks [col]
+  (dosync
+   (ref-set bricks (remove #(= @col (deref %)) @bricks))))
+  
 (defn update-game []
-  (let [dt (update-timer!)]
-    (do
-      (handle-input dt)
-      (update-ref ball (ball/update @ball dt @player l-wall r-wall t-wall)))))
-
-(defn init-textures []
-  (do
-    (update-ref player (putil/load-image @player "res/paddle.png"))
-    (update-ref ball (putil/load-image @ball "res/ball.png"))))
+  (let [dt (timer/update-timer!)
+        _ (paddle/update! player dt)
+        col (ball/update!  ball (concat [player r-wall l-wall t-wall b-wall] @bricks) dt)]
+    (when-not (nil? col) (update-bricks col))))
 
 (defn main-loop []
-  (if (. Display isCloseRequested) (clean-up)
+  (cond (. Display isCloseRequested) (clean-up)
+        (not @playing?) (paused-state)
+        :else (do
+                (GL11/glClear GL11/GL_COLOR_BUFFER_BIT)
+                (handle-input)
+                (update-game)
+                (render)
+                (. Display update)
+                (Display/sync FPS)
+                (recur))))
+
+(defn paused-state []
+  (if @playing? main-loop
       (do
         (GL11/glClear GL11/GL_COLOR_BUFFER_BIT)
-        (update-game)
+        (handle-unpause)
         (render)
+        (.drawString font 270.0 300.0 "HIT SPACE TO CONTINUE" (Color/white))
         (. Display update)
-        (Display/sync 60)
         (recur))))
 
-
+                
 (defn -main []
   (do
     (init-gl WIDTH HEIGHT)
     (init-textures)
-    (main-loop)))
+    (init-level)
+    (trampoline paused-state)))

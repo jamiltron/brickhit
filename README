@@ -1,17 +1,21 @@
 # brickhit
 
-A breakout clone written in Clojure + LWJGL
-
-If anyone can help with the blurry images, I'd really appreciate it. I am not sure if my drawing routines
-are correct.
+A breakout-clone written in Clojure + LWJGL. This isn't supposed to be so much
+of a polished game as my attempt at coding a game I am familiar with in a 
+(hopefully) functional style.
 
 ## Usage
 
 lein deps
 lein run
 
+That HOPEFULLY will work for you. If you have any problems you may need to copy
+the files appropriate to your operating system in native/ to the top-level 
+directory of brickhit before running. Let me know if there are any issues, or if
+you can actually play this. I'd really appreciate it!
+
 ## License
 
-Copyright (C) 2011 Justin Hamilton
+Copyright (C) 2011 Justin Hamilton.
 
 Distributed under the Eclipse Public License, the same as Clojure.
