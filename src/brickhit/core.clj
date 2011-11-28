@@ -18,14 +18,13 @@
 
 ;; game entities
 (def playing? (atom false))
-
 (def awtFont (new Font "Courier New" (Font/BOLD) 24))
 (def awtFontSmaller (new Font "Courier New" (Font/BOLD) 14))
 
 (def player (ref {:x 336
                   :y 536
                   :xdir 0
-                  :xspeed 0.35
+                  :xspeed 0.40
                   :yspeed 0
                   :type :paddle}))
 
@@ -33,8 +32,8 @@
                 :y 520
                 :xdir 1
                 :ydir 1
-                :xspeed 0.35
-                :yspeed 0.35
+                :xspeed 0.30
+                :yspeed 0.30
                 :type ball}))
 
 (def a-brick (ref {}))
@@ -42,10 +41,10 @@
 (def bricks (ref []))
 
 ;; walls
-(def l-wall (ref {:x -32 :y 0 :w 32 :h HEIGHT :type :wall}))
-(def r-wall (ref {:x WIDTH :y 0 :w 32 :h HEIGHT :type :wall}))
-(def t-wall (ref {:x 0 :y -64 :w WIDTH :h 64 :type :wall}))
-(def b-wall (ref {:x 0 :y 600 :w WIDTH :h 64 :type :wall}))
+(def l-wall (ref {:x -32 :y -32 :w 32 :h (+ HEIGHT 32) :type :wall}))
+(def r-wall (ref {:x WIDTH :y -32 :w 32 :h (+ HEIGHT 32) :type :wall}))
+(def t-wall (ref {:x -32 :y -32 :w (+ WIDTH 32) :h 32 :type :wall}))
+(def b-wall (ref {:x -32 :y HEIGHT :w (+ WIDTH 32) :h 32 :type :wall}))
 
 
 (defn init-gl [width height]
@@ -92,7 +91,7 @@
     (sprite/draw @player)
     (sprite/draw @ball)
     (doseq [brick @bricks]
-      (when (:living @brick) (sprite/draw @brick)))
+      (sprite/draw @brick))
     (.drawString font2 0 0 "P to pause, ESC to quit" (Color/white))))
 
 (defn clean-up []
@@ -102,19 +101,24 @@
 
 (declare paused-state)
 
+(defn handle-quit []
+  (when (Keyboard/isKeyDown Keyboard/KEY_ESCAPE) (clean-up)))
+
+(defn handle-pause []
+  (when (Keyboard/isKeyDown Keyboard/KEY_P) (reset! playing? :paused)))
+
+(defn handle-unpause []
+  (when (Keyboard/isKeyDown Keyboard/KEY_SPACE) (do
+                                               (reset! playing? :unpaused)
+                                               (timer/reset-timer!))))
+
 (defn handle-input []
   (when (Keyboard/isKeyDown Keyboard/KEY_LEFT) (paddle/move! player :left))
   (when (Keyboard/isKeyDown Keyboard/KEY_RIGHT) (paddle/move! player :right))
   (when (not (or (Keyboard/isKeyDown Keyboard/KEY_LEFT)
                  (Keyboard/isKeyDown Keyboard/KEY_RIGHT) (paddle/move! player :none))))
-  (when (Keyboard/isKeyDown Keyboard/KEY_P) (reset! playing? false))
-  (when (Keyboard/isKeyDown Keyboard/KEY_ESCAPE) (clean-up)))
-
-(defn handle-unpause []
-  (when (Keyboard/isKeyDown Keyboard/KEY_SPACE) (do
-                                               (reset! playing? true)
-                                               (timer/reset-timer!)))
-  (when (Keyboard/isKeyDown Keyboard/KEY_ESCAPE) (clean-up)))
+  (handle-pause)
+  (handle-quit))
 
 (defn update-bricks [col]
   (dosync
@@ -124,11 +128,22 @@
   (let [dt (timer/update-timer!)
         _ (paddle/update! player dt)
         col (ball/update!  ball (concat [player r-wall l-wall t-wall b-wall] @bricks) dt)]
-    (when-not (nil? col) (update-bricks col))))
+    (when-not (nil? col) (update-bricks col))
+    (when (<= (count @bricks) 0) (reset! playing? :won))))
+
+(defn won-state []
+  (do
+    (GL11/glClear GL11/GL_COLOR_BUFFER_BIT)
+    (handle-quit)
+    (render)
+    (.drawString font 270.0 300.0 "YOU WIN! THANKS FOR PLAYING!" (Color/white))
+    (. Display update)
+    (recur)))
 
 (defn main-loop []
   (cond (. Display isCloseRequested) (clean-up)
-        (not @playing?) (paused-state)
+        (= @playing? :paused) (paused-state)
+        (= @playing? :won) (won-state)
         :else (do
                 (GL11/glClear GL11/GL_COLOR_BUFFER_BIT)
                 (handle-input)
@@ -139,15 +154,15 @@
                 (recur))))
 
 (defn paused-state []
-  (if @playing? main-loop
+  (if (= @playing? :unpaused) main-loop
       (do
         (GL11/glClear GL11/GL_COLOR_BUFFER_BIT)
         (handle-unpause)
+        (handle-quit)
         (render)
         (.drawString font 270.0 300.0 "HIT SPACE TO CONTINUE" (Color/white))
         (. Display update)
         (recur))))
-
                 
 (defn -main []
   (do
