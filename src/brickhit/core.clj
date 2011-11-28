@@ -8,8 +8,7 @@
   (:require   [brickhit.sprite :as sprite]
               [brickhit.timer :as timer]
               [brickhit.paddle :as paddle]
-              [brickhit.ball :as ball]
-              [brickhit.brick :as brick]))
+              [brickhit.ball :as ball]))
 
 ;; game constants
 (def FPS 60)
@@ -84,7 +83,7 @@
                            y (range 32 200 (:h @a-brick))]
                        (ref {:x x, :y y, :texture (:texture @a-brick),
                              :w (:w @a-brick), :h (:h @a-brick),
-                             :type :brick, :living true, :hit brick/hit!}))))))
+                             :type :brick, :living true}))))))
 
 (defn render []
   (do

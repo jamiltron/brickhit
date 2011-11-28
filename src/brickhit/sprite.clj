@@ -68,14 +68,16 @@
 
 (defn colliding-edge [x y]
   (let [a @x
-        b @y]
-    (let [a-left (:x a) a-top (:y a) a-right (+ (:x a) (:w a)) a-bottom (+ (:y a) (:h a))
-          b-left (:x b) b-top (:y b) b-right (+ (:x b) (:w b)) b-bottom (+ (:y b) (:h b))
-          x-area (first (calc-area a b))
-          y-area (second (calc-area a b))]
-      (if (<= y-area x-area) (if (< a-top b-top) :top
-                                 :bottom)
-          (if (< a-left b-left) :left
-              :right)))))
+        b @y
+        a-left (:x a) a-top (:y a) a-right (+ (:x a) (:w a)) a-bottom (+ (:y a) (:h a))
+        b-left (:x b) b-top (:y b) b-right (+ (:x b) (:w b)) b-bottom (+ (:y b) (:h b))
+        x-area (first (calc-area a b))
+        y-area (second (calc-area a b))]
+    (cond
+     (= y-area x-area) :corner
+     (< y-area x-area) (if (< a-top b-top) :top
+                           :bottom)
+     :else (if (< a-left b-left) :left
+               :right))))
 
          

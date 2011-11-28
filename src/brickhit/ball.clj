@@ -17,9 +17,11 @@
 
 (defn reflect [this other edge]
   (let [ydir (if (or (= edge :top)
-                      (= edge :bottom)) (* (:ydir @this) -1)
+                     (= edge :bottom)
+                     (= edge :corner)) (* (:ydir @this) -1)
                   (:ydir @this))
         xdir (cond
+               (= edge :corner) (* (:xdir @this) -1)
                (= edge :left) -1
                (= edge :right) 1
                (= (:type @other) :paddle) (if (not= (:xdir @other) 0) (:xdir @other)
