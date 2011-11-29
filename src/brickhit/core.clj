@@ -16,7 +16,7 @@
 (def HEIGHT 600)
 
 ;; game entities
-(def playing? (atom false))
+(def playing? (atom :paused))
 (def awtFont (new Font "Courier New" (Font/BOLD) 24))
 (def awtFontSmaller (new Font "Courier New" (Font/BOLD) 14))
 
@@ -47,28 +47,27 @@
 
 
 (defn init-gl [width height]
-  (do
-    (Display/setDisplayMode (new DisplayMode width height))
-    (Display/setTitle "Brickhit: Clojure + LWJGL")
-    (Display/setFullscreen false)
-    (Display/create)
-    (Display/setVSyncEnabled true)
-
-    (GL11/glEnable GL11/GL_TEXTURE_2D)
-    (GL11/glShadeModel GL11/GL_SMOOTH)
-    (GL11/glDisable GL11/GL_DEPTH_TEST)
-    (GL11/glDisable GL11/GL_LIGHTING)
-    (GL11/glClearColor 0.0 0.0 0.0 0.0)
-    (GL11/glEnable  GL11/GL_BLEND)
-    (GL11/glBlendFunc GL11/GL_SRC_ALPHA GL11/GL_ONE_MINUS_SRC_ALPHA)
-    (GL11/glClearDepth 1)
-    (GL11/glMatrixMode GL11/GL_PROJECTION)
-    (GL11/glLoadIdentity)
-    (GL11/glOrtho 0 width height 0 1 -1)
-    (GL11/glMatrixMode GL11/GL_MODELVIEW)
-    (GL11/glViewport 0 0 width height)
-    (def font (new TrueTypeFont awtFont true))
-    (def font2 (new TrueTypeFont awtFontSmaller true))))
+  (Display/setDisplayMode (new DisplayMode width height))
+  (Display/setTitle "Brickhit: Clojure + LWJGL")
+  (Display/setFullscreen false)
+  (Display/create)
+  (Display/setVSyncEnabled true)
+  
+  (GL11/glEnable GL11/GL_TEXTURE_2D)
+  (GL11/glShadeModel GL11/GL_SMOOTH)
+  (GL11/glDisable GL11/GL_DEPTH_TEST)
+  (GL11/glDisable GL11/GL_LIGHTING)
+  (GL11/glClearColor 0.0 0.0 0.0 0.0)
+  (GL11/glEnable  GL11/GL_BLEND)
+  (GL11/glBlendFunc GL11/GL_SRC_ALPHA GL11/GL_ONE_MINUS_SRC_ALPHA)
+  (GL11/glClearDepth 1)
+  (GL11/glMatrixMode GL11/GL_PROJECTION)
+  (GL11/glLoadIdentity)
+  (GL11/glOrtho 0 width height 0 1 -1)
+  (GL11/glMatrixMode GL11/GL_MODELVIEW)
+  (GL11/glViewport 0 0 width height)
+  (def font (new TrueTypeFont awtFont true))
+  (def font2 (new TrueTypeFont awtFontSmaller true)))
 
 (defn init-textures []
   (dosync
@@ -86,12 +85,11 @@
                              :type :brick, :living true}))))))
 
 (defn render []
-  (do
-    (sprite/draw @player)
-    (sprite/draw @ball)
-    (doseq [brick @bricks]
-      (sprite/draw @brick))
-    (.drawString font2 0 0 "P to pause, ESC to quit" (Color/white))))
+  (sprite/draw @player)
+  (sprite/draw @ball)
+  (doseq [brick @bricks]
+    (sprite/draw @brick))
+  (.drawString font2 0 0 "P to pause, ESC to quit" (Color/white)))
 
 (defn clean-up []
   (do
@@ -131,13 +129,12 @@
     (when (<= (count @bricks) 0) (reset! playing? :won))))
 
 (defn won-state []
-  (do
-    (GL11/glClear GL11/GL_COLOR_BUFFER_BIT)
-    (handle-quit)
-    (render)
-    (.drawString font 270.0 300.0 "YOU WIN! THANKS FOR PLAYING!" (Color/white))
-    (. Display update)
-    (recur)))
+  (GL11/glClear GL11/GL_COLOR_BUFFER_BIT)
+  (handle-quit)
+  (render)
+  (.drawString font 270.0 300.0 "YOU WIN! THANKS FOR PLAYING!" (Color/white))
+  (. Display update)
+  (recur))
 
 (defn main-loop []
   (cond (. Display isCloseRequested) (clean-up)
@@ -164,8 +161,7 @@
         (recur))))
                 
 (defn -main []
-  (do
-    (init-gl WIDTH HEIGHT)
-    (init-textures)
-    (init-level)
-    (trampoline paused-state)))
+  (init-gl WIDTH HEIGHT)
+  (init-textures)
+  (init-level)
+  (trampoline paused-state))

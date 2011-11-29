@@ -17,22 +17,21 @@
                 :h (.getImageHeight t))))
 
 (defn draw [this]
-  (do
-    (GL11/glPushMatrix)
-    (.bind Color/white)
-    (.bind (:texture this))
-    (GL11/glTranslatef (:x this) (:y this) 0)
-    (GL11/glBegin GL11/GL_QUADS)
-    (GL11/glTexCoord2f 0 0)
-    (GL11/glVertex2i 0 0)
-    (GL11/glTexCoord2f 1 0)
-    (GL11/glVertex2i  (:w this) 0)
-    (GL11/glTexCoord2f 1 1)
-    (GL11/glVertex2i (:w this) (:h this))
-    (GL11/glTexCoord2f 0 1)
-    (GL11/glVertex2i 0 (:h this))
-    (GL11/glEnd)
-    (GL11/glPopMatrix)))
+  (GL11/glPushMatrix)
+  (.bind Color/white)
+  (.bind (:texture this))
+  (GL11/glTranslatef (:x this) (:y this) 0)
+  (GL11/glBegin GL11/GL_QUADS)
+  (GL11/glTexCoord2f 0 0)
+  (GL11/glVertex2i 0 0)
+  (GL11/glTexCoord2f 1 0)
+  (GL11/glVertex2i  (:w this) 0)
+  (GL11/glTexCoord2f 1 1)
+  (GL11/glVertex2i (:w this) (:h this))
+  (GL11/glTexCoord2f 0 1)
+  (GL11/glVertex2i 0 (:h this))
+  (GL11/glEnd)
+  (GL11/glPopMatrix))
 
 (defn aabb? [x y]
   (let [a @x
